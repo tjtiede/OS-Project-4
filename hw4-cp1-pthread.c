@@ -9,6 +9,7 @@
 #define NUM_THREADS 4
 #endif
 
+// QUESTION what is BATCH_SIZE supposed to be used for?
 #define BATCH_SIZE 4096
 #define MAX_LINE 8192
 
