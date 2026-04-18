@@ -22,7 +22,6 @@ typedef struct {
   int start;
   int end;
   char **lines;
-  long base_line;
   LineResult *results; // Write results here
 } ThreadArg;
 
@@ -43,7 +42,7 @@ static void *compute_max(void *arg) {
       }
     }
 
-    a->results[line_index].line_number = a->base_line + line_index;
+    a->results[line_index].line_number = line_index;
     a->results[line_index].max_val = maxASCII;
   }
 
@@ -158,7 +157,6 @@ int main(int argc, char *argv[]) {
       arg->end = line_count;
     }
     arg->lines = lines;
-    arg->base_line = 0;
     arg->results = results;
 
     pthread_create_error_number =
