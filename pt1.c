@@ -2,14 +2,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <stdint.h>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 4  // default if no argument given
 
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE 2000000
+#endif
 #define STRING_SIZE 16
 #define ALPHABET_SIZE 26
 
 pthread_mutex_t mutexsum;			// mutex for char_counts
+int num_threads;
 
 char char_array[ARRAY_SIZE][STRING_SIZE];
 int char_counts[ALPHABET_SIZE];			// count of individual characters
@@ -50,10 +55,10 @@ void *count_array(void *myID)
   int i, j, charLoc;
   int local_char_count[ALPHABET_SIZE];
 
-  int startPos = ((int) myID) * (ARRAY_SIZE / NUM_THREADS);
-  int endPos = startPos + (ARRAY_SIZE / NUM_THREADS);
+  int startPos = ((intptr_t) myID) * (ARRAY_SIZE / num_threads);
+  int endPos = startPos + (ARRAY_SIZE / num_threads);
 
-  printf("myID = %d startPos = %d endPos = %d \n", (int) myID, startPos, endPos);
+  // printf("myID = %d startPos = %d endPos = %d \n", (int) myID, startPos, endPos);
 
 					// init local count array
   for ( i = 0; i < ALPHABET_SIZE; i++ ) {
@@ -89,11 +94,14 @@ void print_results()
   printf("\nTotal characters:  %d\n", total);
 }
 
-main() {
+int main(int argc, char *argv[]) {
 	int i, rc;
-	pthread_t threads[NUM_THREADS];
+	num_threads = (argc > 1) ? atoi(argv[1]) : NUM_THREADS;
+	pthread_t threads[num_threads];
 	pthread_attr_t attr;
 	void *status;
+	struct timeval start, end;
+	double elapsed;
 
 
 	/* Initialize and set thread detached attribute */
@@ -102,8 +110,10 @@ main() {
 
 	init_arrays();
 
-	for (i = 0; i < NUM_THREADS; i++ ) {
-	      rc = pthread_create(&threads[i], &attr, count_array, (void *)i);
+	gettimeofday(&start, NULL);
+
+	for (i = 0; i < num_threads; i++ ) {
+	      rc = pthread_create(&threads[i], &attr, count_array, (void *)(intptr_t)i);
 	      if (rc) {
 	        printf("ERROR; return code from pthread_create() is %d\n", rc);
 		exit(-1);
@@ -112,7 +122,7 @@ main() {
 
 	/* Free attribute and wait for the other threads */
 	pthread_attr_destroy(&attr);
-	for(i=0; i<NUM_THREADS; i++) {
+	for(i=0; i<num_threads; i++) {
 	     rc = pthread_join(threads[i], &status);
 	     if (rc) {
 		   printf("ERROR; return code from pthread_join() is %d\n", rc);
@@ -120,6 +130,9 @@ main() {
 	     }
 	}
 
+	gettimeofday(&end, NULL);
+	elapsed = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+	printf("Elapsed Time: %.6f seconds\n", elapsed);
 	print_results();
 
 	pthread_mutex_destroy(&mutexsum);

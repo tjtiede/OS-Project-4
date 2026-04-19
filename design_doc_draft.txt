@@ -1,0 +1,103 @@
+CIS520 Project 4 - Preliminary Design Document
+=====================================================
+
+1. PROBLEM STATEMENT
+--------------------
+The goal of this project is to count the frequency of each letter (a-z) across a large
+two-dimensional array of randomly generated lowercase characters. The array contains
+ARRAY_SIZE rows of STRING_SIZE (16) characters each. We implement and compare four
+parallel approaches: serial baseline, pthreads, MPI, and CUDA, measuring how each scales
+with input size and degree of parallelism.
+
+2. SOFTWARE ARCHITECTURE  >> This is all AI right now, we can change this later to be our actual explination of the ARCHITECTURE. <<
+------------------------
+All implementations share the same high-level structure:
+
+  [Data Initialization] -> [Work Partitioning] -> [Local Counting] -> [Result Merging] -> [Output]
+
+The key difference between implementations is how the partition and merge steps are handled.
+
+2.1 Serial Baseline (hw4-pt0.c)
+A single loop iterates over the entire ARRAY_SIZE x STRING_SIZE array, incrementing a
+global char_counts[26] array directly. No parallelism. Serves as the timing baseline.
+
+2.2 Pthreads (pt1.c)
+NUM_THREADS POSIX threads are spawned. Each thread receives an integer ID and is
+responsible for the slice of rows from (ID * ARRAY_SIZE/NUM_THREADS) to
+((ID+1) * ARRAY_SIZE/NUM_THREADS). Each thread maintains a private local_char_count[26]
+array to avoid write contention during counting. After counting its slice, each thread
+acquires a mutex (mutexsum) and adds its local counts into the shared global char_counts[26].
+This design minimizes lock contention: the mutex is held only during the brief merge step,
+not during the main counting loop.
+
+2.3 MPI (pt2.c)
+Rank 0 initializes the full array and broadcasts it to all ranks via MPI_Bcast. Each rank
+counts its slice independently (same partitioning logic as pthreads). Results are collected
+on rank 0 using MPI_Reduce with MPI_SUM. Number of processes is determined at runtime by
+mpirun, not hardcoded.
+
+2.4 CUDA (cuda3Way.cu)
+The 2D char array is flattened to a 1D integer array. Each GPU thread handles a contiguous
+block of perThread (10,000) characters. Each thread writes its per-character counts into a
+private region of a large output array (thread_id * 26 + char_index). The CPU then reduces
+all per-thread count arrays into final totals. No atomic operations are needed because each
+thread writes to a unique memory region.
+
+
+3. MEMORY UTILIZATION
+---------------------
+Memory usage is fixed regardless of thread/process count:
+  - char_array:  ARRAY_SIZE * STRING_SIZE * 1 byte
+      500k  ->   8 MB
+      1M    ->  16 MB
+      2M    ->  32 MB
+  - char_counts: 26 * 4 bytes = 104 bytes (negligible)
+  - Per-thread local arrays: NUM_THREADS * 26 * 4 bytes (e.g., 16 threads = 1664 bytes)
+
+Memory is not a bottleneck. All threads share the same read-only char_array in a single 
+process address space.
+
+4. PTHREADS PERFORMANCE ANALYSIS
+---------------------------------
+Tests were run on a single machine (Linux, Acer Nitro AN515-55) with the following
+configuration: array sizes 500k / 1M / 2M, thread counts 1 / 2 / 4 / 8 / 16.
+Timing measured wall-clock time for thread creation through final pthread_join only.
+
+Raw Data:
+
+  Array Size  | Threads | Time (s)  | Speedup | Efficiency
+  ------------|---------|-----------|---------|----------
+  500,000     |    1    | 0.004503  |  1.00   | 100%
+  500,000     |    2    | 0.002491  |  1.81   |  90%
+  500,000     |    4    | 0.001789  |  2.52   |  63%
+  500,000     |    8    | 0.001630  |  2.76   |  35%
+  500,000     |   16    | 0.001633  |  2.76   |  17%
+  ------------|---------|-----------|---------|----------
+  1,000,000   |    1    | 0.009666  |  1.00   | 100%
+  1,000,000   |    2    | 0.004865  |  1.99   |  99%
+  1,000,000   |    4    | 0.002466  |  3.92   |  98%
+  1,000,000   |    8    | 0.002890  |  3.34   |  42%
+  1,000,000   |   16    | 0.002856  |  3.38   |  21%
+  ------------|---------|-----------|---------|----------
+  2,000,000   |    1    | 0.016548  |  1.00   | 100%
+  2,000,000   |    2    | 0.008711  |  1.90   |  95%
+  2,000,000   |    4    | 0.004411  |  3.75   |  94%
+  2,000,000   |    8    | 0.004544  |  3.64   |  46%
+  2,000,000   |   16    | 0.005438  |  3.04   |  19%
+
+Near-linear speedup up to 4 threads at larger input sizes,
+with 94-98% efficiency at 2M and 1M respectively. At sufficient input
+size, the parallel work does much better over thread creation and synchronizatiom. Almost perfect for 
+
+At 500k elements, efficiency at 4 threads drops to 63%. Thread creation overhead seems to soak up a lot,
+of the performance seen with the near-linear efficiency. 
+
+When the thread count goes above 4, performance drops down by a lot:
+8 threads: about 35–46% efficiency
+16 threads: about 17–21% efficiency
+
+This is probably happening because the machine I am running the tests on only has 4 cores and so up to 4,
+each thread can run its own seperate core but past that threads must share cores.
+
+
+Next tests will be using Beocat and its systems to get a better look on how more cores will affect perofrmance.
