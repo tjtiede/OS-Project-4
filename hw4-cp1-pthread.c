@@ -14,16 +14,11 @@
 #define MAX_LINE 8192
 
 typedef struct {
-  long line_number;
-  int max_val; // max ASCII value on the line
-} LineResult;
-
-typedef struct {
   int thread_id;
   int start;
   int end;
   char **lines;
-  LineResult *results; // Write results here
+  int *max_chars; // Write results here
 } ThreadArg;
 
 // Loops through a line, finds the highest ASCII value
@@ -43,8 +38,7 @@ static void *compute_max(void *arg) {
       }
     }
 
-    a->results[line_index].line_number = line_index;
-    a->results[line_index].max_val = maxASCII;
+    a->max_chars[line_index] = maxASCII;
   }
 
   pthread_exit(NULL);
@@ -124,9 +118,10 @@ int main(int argc, char *argv[]) {
 
   close(fd);
 
-  LineResult *results = (LineResult *)malloc(line_count * sizeof(LineResult));
-  if (NULL == results) {
-    printf("Error: malloc failed for results\n");
+  // Allocate a buffer to store the results for each line
+  int *max_chars = (int *)malloc(line_count * sizeof(int));
+  if (NULL == max_chars) {
+    printf("Error: malloc failed for int *max_chars\n");
     exit(1);
   }
 
@@ -158,7 +153,7 @@ int main(int argc, char *argv[]) {
       arg->end = line_count;
     }
     arg->lines = lines;
-    arg->results = results;
+    arg->max_chars = max_chars;
 
     pthread_create_error_number =
         pthread_create(&threads[thread_index], &attr, compute_max, (void *)arg);
@@ -185,15 +180,14 @@ int main(int argc, char *argv[]) {
 
   // Print results in order
   for (int line_index = 0; line_index < line_count; line_index += 1) {
-    printf("%ld: %d\n", results[line_index].line_number,
-           results[line_index].max_val);
+    printf("%d: %d\n", line_index, max_chars[line_index]);
     // Free line
     free(lines[line_index]);
   }
 
   // Cleanup
   free(lines);
-  free(results);
+  free(max_chars);
 
   printf("Main: program completed. Exiting.\n");
   return 0;
