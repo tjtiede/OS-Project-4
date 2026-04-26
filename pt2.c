@@ -5,10 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifndef NUM_THREADS
-#define NUM_THREADS 4
-#endif
-
 #define BATCH_SIZE 32768
 #define MAX_LINE 8192
 
@@ -19,19 +15,20 @@ typedef struct {
 } Batch;
 
 typedef struct {
-  int *buf; // Write results here
+  // FIXME do this for pt1.c
+  unsigned char *buf; // Write results here
   int capacity;
   int len;
 } MaxChars;
 
 // Appends max_char to arg->max_chars; reallocating max_chars as needed
-static void append_max_char(int max_char, MaxChars *max_chars) {
+static void append_max_char(unsigned char max_char, MaxChars *max_chars) {
   if (max_chars->len >= max_chars->capacity) {
     // If max_chars is at capacity
     // then realloc(max_chars, ...) to double its capacity
     max_chars->capacity *= 2;
-    max_chars->buf =
-        (int *)realloc(max_chars->buf, max_chars->capacity * sizeof(int));
+    max_chars->buf = (unsigned char *)realloc(
+        max_chars->buf, max_chars->capacity * sizeof(int));
     if (NULL == max_chars->buf) {
       printf("Error: realloc failed\n");
       exit(1);
@@ -42,14 +39,6 @@ static void append_max_char(int max_char, MaxChars *max_chars) {
 }
 
 int main(int argc, char *argv[]) {
-  const char *filepath = "/homes/eyv/cis520/wiki_dump.txt";
-  int fd = open(filepath, O_RDONLY);
-
-  if (-1 == fd) {
-    printf("Error: Could not open file %s\n", filepath);
-    exit(1);
-  }
-
   int mpi_init_error_code = MPI_Init(&argc, &argv);
   if (MPI_SUCCESS != mpi_init_error_code) {
     printf("Error: MPI_Init failed\n");
@@ -70,6 +59,14 @@ int main(int argc, char *argv[]) {
   const int bytes_per_thread = (BATCH_SIZE + num_threads - 1) / num_threads;
 
   if (0 == rank) {
+    const char *filepath = "/homes/eyv/cis520/wiki_dump.txt";
+    int fd = open(filepath, O_RDONLY);
+
+    if (-1 == fd) {
+      printf("Error: Could not open file %s\n", filepath);
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
     // Initialize batch
     Batch batch;
     batch.len = 0;
@@ -92,29 +89,32 @@ int main(int argc, char *argv[]) {
       batch.len += batch.bytes_read;
 
       // To each thread, send batch.len, batch.buf, and batch.bytes_read
-      for (int thread_rank = 1; thread_rank < num_threads; thread_rank += 1) {
+      for (int thread_rank = 1; thread_rank < world_size; thread_rank += 1) {
         MPI_Send(&batch.len, 1, MPI_INT, thread_rank, 0, MPI_COMM_WORLD);
-        MPI_Send(batch.buf, batch.len, MPI_CHAR, thread_rank, 1,
-                 MPI_COMM_WORLD);
+        if (0 < batch.len) {
+          MPI_Send(batch.buf, batch.len, MPI_UNSIGNED_CHAR, thread_rank, 0,
+                   MPI_COMM_WORLD);
+        }
         MPI_Send(&batch.bytes_read, 1, MPI_INT, thread_rank, 0, MPI_COMM_WORLD);
       }
 
-      for (int thread_rank = 1; thread_rank < NUM_THREADS; thread_rank += 1) {
+      for (int thread_rank = 1; thread_rank < world_size; thread_rank += 1) {
         // Receive the length of char *max_chars
         int max_char_len_capacity;
-        MPI_Recv(&max_char_len_capacity, 1, MPI_INT, thread_rank, 3,
+        MPI_Recv(&max_char_len_capacity, 1, MPI_INT, thread_rank, 0,
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         if (0 < max_char_len_capacity) {
           // If the length is not zero, read max_chars
-          int *max_chars = malloc(max_char_len_capacity * sizeof(int));
+          unsigned char *max_chars =
+              malloc(max_char_len_capacity * sizeof(unsigned char));
           if (NULL == max_chars) {
             printf("Error: malloc failed");
             MPI_Abort(MPI_COMM_WORLD, 1);
           }
           MPI_Recv(max_chars, max_char_len_capacity, MPI_UNSIGNED_CHAR,
-                   thread_rank, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-          // foreach line (in order), print the corresponding max_char
+                   thread_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+          // Foreach line (in order), print the corresponding max_char
           for (int i = 0; i < max_char_len_capacity; i += 1) {
             printf("%lld: %d\n", lines_processed, (int)max_chars[i]);
             lines_processed += 1;
@@ -132,10 +132,9 @@ int main(int argc, char *argv[]) {
       // Find the last newline in batch,
       // we haven't processed anything after that yet.
       int last_newline_index = batch.len - 1;
-      for (;; last_newline_index -= 1) {
-        if (batch.buf[last_newline_index] == '\n') {
-          break;
-        }
+      // FIXME do this to pt1.c
+      while (last_newline_index >= 0 && batch.buf[last_newline_index] != '\n') {
+        last_newline_index -= 1;
       }
       // If the newline is the last char in batch, we can just set batch_len = 0
       // Otherwise we have to move the unprocessed bytes to the front of the
@@ -151,7 +150,7 @@ int main(int argc, char *argv[]) {
 
     // Tell worker threads we're done by sending len = -1
     batch.len = -1;
-    for (int thread_rank = 1; thread_rank < num_threads; thread_rank += 1) {
+    for (int thread_rank = 1; thread_rank < world_size; thread_rank += 1) {
       MPI_Send(&batch.len, 1, MPI_INT, thread_rank, 0, MPI_COMM_WORLD);
     }
   } else {
@@ -163,7 +162,8 @@ int main(int argc, char *argv[]) {
     const int initial_thread_max_chars_size = 64;
 
     MaxChars max_chars;
-    max_chars.buf = malloc(initial_thread_max_chars_size * sizeof(char));
+    max_chars.buf =
+        malloc(initial_thread_max_chars_size * sizeof(unsigned char));
     if (NULL == max_chars.buf) {
       printf("Error: malloc failed");
       MPI_Abort(MPI_COMM_WORLD, 1);
@@ -179,18 +179,20 @@ int main(int argc, char *argv[]) {
         break;
       }
 
-      char *batch_buf = (char *)malloc(batch_len * sizeof(char));
-      if (NULL == batch_buf) {
-        printf("Error: malloc failed");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-      }
+      unsigned char *batch_buf = NULL;
       if (0 != batch_len) {
-        MPI_Recv(batch_buf, batch_len, MPI_CHAR, 0, 1, MPI_COMM_WORLD,
+        batch_buf = (unsigned char *)malloc(batch_len * sizeof(char));
+        if (NULL == batch_buf) {
+          printf("Error: malloc failed");
+          MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+        MPI_Recv(batch_buf, batch_len, MPI_UNSIGNED_CHAR, 0, 0, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
       }
 
-      int batch_bytes_read = MPI_Recv(&batch_len, 1, MPI_INT, 0, 0,
-                                      MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      int batch_bytes_read;
+      MPI_Recv(&batch_bytes_read, 1, MPI_INT, 0, 0, MPI_COMM_WORLD,
+               MPI_STATUS_IGNORE);
 
       int char_index = bytes_per_thread * (rank - 1);
       const int begining_of_next_threads_partition =
@@ -244,6 +246,16 @@ int main(int argc, char *argv[]) {
         // Seemingly we should still handle this and push the current max_char
         append_max_char(max_char, &max_chars);
       }
+
+      MPI_Send(&max_chars.len, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+      if (0 < max_chars.len) {
+        MPI_Send(max_chars.buf, max_chars.len, MPI_UNSIGNED_CHAR, 0, 0,
+                 MPI_COMM_WORLD);
+      }
+      max_chars.len = 0;
+
+      // FIXME We could only realloc as nessesary instead of every time
+      free(batch_buf);
     }
   }
 
