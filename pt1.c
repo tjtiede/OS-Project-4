@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     thread_args[thread_index].max_chars_len = 0;
   }
 
-  int lines_processed = 0;
+  long long lines_processed = 0;
 
   // This tracks how many bytes of batch are currently filled.
   // Those filled bytes should always be at the front of batch.
@@ -155,6 +155,10 @@ int main(int argc, char *argv[]) {
     // Read into batch starting at where the currently filled bytes end.
     // Read as many bytes as we can currently fit up to the end of batch.
     batch.bytes_read = read(fd, batch.buf + batch.len, BATCH_SIZE - batch.len);
+    if (-1 == batch.bytes_read) {
+      perror("Error: read(fd, ...) failed");
+      exit(1);
+    }
     // Add those bytes we just read to track the currently filled bytes
     batch.len += batch.bytes_read;
 
@@ -165,7 +169,7 @@ int main(int argc, char *argv[]) {
       if (0 != pthread_create_error_number) {
         printf("ERROR; return code from pthread_create() is %d\n",
                pthread_create_error_number);
-        exit(-1);
+        exit(1);
       }
     }
 
@@ -176,14 +180,14 @@ int main(int argc, char *argv[]) {
       if (pthread_join_error_number) {
         printf("ERROR; error number from pthread_join() is %d\n",
                pthread_join_error_number);
-        exit(-1);
+        exit(1);
       }
     }
 
     // Print results in order
     for (int thread_index = 0; thread_index < NUM_THREADS; thread_index += 1) {
       for (int i = 0; i < thread_args[thread_index].max_chars_len; i += 1) {
-        printf("%d: %d\n", lines_processed,
+        printf("%lld: %d\n", lines_processed,
                thread_args[thread_index].max_chars[i]);
         lines_processed += 1;
       }
