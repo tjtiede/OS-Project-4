@@ -36,3 +36,71 @@ To get combinations, we can trade 1 for another. Good combinations might be:
 
 Submit a job under Slurm using `sbatch`
 
+
+
+
+We are testing the MPI implementation performance by testing 3 different cases with 3 different memory budgets. 
+
+Maximum Nodes: Using as many nodes as possible, distributing the workload across the most machines possible. This tests the overhead and benefit of the inter-node MPI communicaiton.
+
+Maximize Cores Per Node: Concentrate all cores on as few nodes as possible, maximizing intra-node parallelism and shared memory bandwidth
+
+Maximize Memory per Core: Allocate the largest possible memory per core, using fewer total ranks. This tests whether memory-bound workloads benefit from reduced core density.
+
+Budget A: ~4096 MB:
+  1. Maximizing Nodes
+    - Nodes: 4
+    - Cores per Node: 4
+	- Memory per Core: 512 MB
+
+  2. Maximizing cores per node
+    - Nodes: 1
+    - Cores per Node: 16
+	- Memory per Core: 256 MB
+
+  3. Maximizing memory per core
+    - Nodes: 2
+    - Cores per Node: 4
+	- Memory per Core: 512 MB
+
+
+Budget B: ~8192 MB:
+  1. Maximizing Nodes
+    - Nodes: 8
+    - Cores per Node: 2
+	- Memory per Core: 512 MB
+
+  2. Maximizing cores per node
+    - Nodes: 1
+    - Cores per Node: 16
+	- Memory per Core: 512 MB
+
+  3. Maximizing memory per core
+    - Nodes: 2
+    - Cores per Node: 4
+	- Memory per Core: 1 GB
+
+
+Budget C: ~16384 MB:
+  1. Maximizing Nodes
+    - Nodes: 8
+    - Cores per Node: 2
+	- Memory per Core: 512 MB
+
+  2. Maximizing cores per node
+    - Nodes: 1
+    - Cores per Node: 32
+	- Memory per Core: 512 MB
+
+  3. Maximizing memory per core
+    - Nodes: 2
+    - Cores per Node: 4
+	- Memory per Core: 2 GB
+
+
+
+
+   
+
+
+  
