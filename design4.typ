@@ -108,4 +108,132 @@ We tested the performance of each version under 3 different memory budgets where
   [2 nodes, 4 cores, 2 GB],
 )
 
+#pagebreak()
 
+#align(center, [= Performance Analysis]) \
+
+TODO
+- Compute Standard Deviations
+- Perform Significance Test
+- Make Graphs With Error Bars
+
+#pagebreak()
+
+#align(center, [= Appendix - Controlling Scripts]) \
+
+TODO
+- Include Files (Typst has a macro for this, we just need a file path)
+- Probably want to include description of how to use the files, but perhaps that would better be a part of the script itself
+
+#pagebreak()
+
+#align(center, [= Appendix - Sample Output])
+#align(center, [(It wraps around into a second column)]) \
+#align(center, grid(
+  columns: (auto, auto),
+  column-gutter: 5cm,
+  ```
+  0: 125
+  1: 125
+  2: 125
+  3: 125
+  4: 125
+  5: 125
+  6: 125
+  7: 125
+  8: 125
+  9: 124
+  10: 226
+  11: 195
+  12: 125
+  13: 226
+  14: 195
+  15: 125
+  16: 125
+  17: 125
+  18: 125
+  19: 125
+  20: 125
+  21: 226
+  22: 125
+  23: 125
+  24: 125
+  25: 195
+  26: 125
+  27: 125
+  28: 226
+  29: 125
+  30: 125
+  31: 125
+  32: 125
+  33: 125
+  34: 214
+  35: 226
+  36: 226
+  37: 226
+  38: 125
+  39: 125
+  40: 125
+  41: 125
+  42: 125
+  43: 125
+  44: 226
+  45: 226
+  46: 195
+  47: 217
+  48: 125
+  49: 226
+  ```,
+  ```
+  50: 226
+  51: 125
+  52: 195
+  53: 125
+  54: 125
+  55: 125
+  56: 226
+  57: 125
+  58: 125
+  59: 125
+  60: 125
+  61: 125
+  62: 125
+  63: 125
+  64: 226
+  65: 125
+  66: 125
+  67: 125
+  68: 226
+  69: 194
+  70: 194
+  71: 226
+  72: 125
+  73: 226
+  74: 197
+  75: 125
+  76: 226
+  77: 125
+  78: 224
+  79: 226
+  80: 209
+  81: 125
+  82: 195
+  83: 226
+  84: 125
+  85: 125
+  86: 226
+  87: 226
+  88: 125
+  89: 226
+  90: 226
+  91: 125
+  92: 206
+  93: 226
+  94: 195
+  95: 195
+  96: 125
+  97: 226
+  98: 226
+  99: 195
+  ```,
+))
