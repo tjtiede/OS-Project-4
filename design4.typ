@@ -67,3 +67,45 @@ Under the MPI paradigm we can not pass message by sharing memory so we must shar
 
 == OpenMP
 `TODO`
+
+#pagebreak()
+
+#align(center, [= Testing Methodology]) \
+
+We want to test the performance and resource usage of our code on the "mole" class of machines with different combinations of the following: \
+#h(.5cm) Nodes: 1, 2, 4, 8 \
+#h(.5cm) Cores: 1, 2, 4, 8, 16, 32 \
+#h(.5cm) Memory per core: 64MB, 128MB, 512MB, 1GB, 1.5GB, 3GB \
+We want to show how performance differs across multiple machines vs a single machine and using different memory "budgets" where
+$
+  #`budget` = #`nodes` dot #`ntask-per-node` dot #`mem-per-cpu`.
+$
+
+We tested the performance of each version under 3 different memory budgets where under each budget we tested 3 different cases: \
+#h(.5cm) *Maximum Nodes* --- Distribute the workload across the most machines possible. This tests the overhead of inter-node communicaiton and benefit of parallelizing acrossed machines. \
+#h(.5cm) *Maximum Cores Per Node* --- Concentrate all cores on as few nodes as possible, maximizing intra-node parallelism and shared memory bandwidth. \
+#h(.5cm) *Maximum Memory per Core* --- Allocate the largest possible memory per core, using fewer total ranks. This tests whether memory-bound workloads benefit from reduced core density.
+
+#table(
+  columns: (auto, auto, auto, auto),
+  table.cell(stroke: (left: none, top: none))[],
+  [*Budget A: \~4096 MB*],
+  [*Budget B: \~8192 MB*],
+  [*Budget C: \~16384 MB*],
+  [*Max. Nodes*],
+  [4 nodes, 4 cores, 512 MB],
+  [8 nodes, 2 cores, 512 MB],
+  [8 nodes, 4 cores, 512 MB],
+
+  [*Max. Cores*],
+  [1 nodes, 16 cores, 256 MB],
+  [1 nodes, 16 cores, 512 MB],
+  [1 nodes, 32 cores, 512 MB],
+
+  [*Max. Mem.*],
+  [2 nodes, 4 cores, 512 MB],
+  [2 nodes, 4 cores, 1 GB],
+  [2 nodes, 4 cores, 2 GB],
+)
+
+
