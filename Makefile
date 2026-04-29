@@ -1,36 +1,22 @@
-#
-# Open Systems Lab
-# http://www.lam-mpi.org/tutorials/
-# Indiana University
-#
-# MPI Tutorial
-# Sample Makefile
-#
+CC_MPI   = mpicc
+CC_OMP   = gcc
+CFLAGS   = -O2 -Wall
 
-# "mpicc" adds the directories for the include and lib files.  Hence,
-# -I and -L for MPI stuff is not necessary
-#
+# Output directories
+BINDIR   = bin
 
-CC        = mpicc
+.PHONY: all mpi clean
 
-#
-# Modify TOPDIR if you use your own include files and library files
-#
+all: mpi
 
-PROGRAM   = hello			# name of the binary
-SRCS      = MPI_C_SAMPLE.c		# source file
-OBJS      = $(SRCS:.c=.o)		# object file
+$(BINDIR):
+	mkdir -p $(BINDIR)
 
-#
-# Targets
-#
+# MPI build
+mpi: $(BINDIR)/pt2
 
-default: all
-
-all: $(PROGRAM) 
-
-$(PROGRAM): $(OBJS)
-	$(CC) $(OBJS) -o $(PROGRAM) $(LDFLAGS)
+$(BINDIR)/pt2: mpi/pt2.c | $(BINDIR)
+	$(CC_MPI) $(CFLAGS) -o $@ $<
 
 clean:
-	/bin/rm -f $(OBJS) $(PROGRAM)
+	/bin/rm -rf $(BINDIR)
