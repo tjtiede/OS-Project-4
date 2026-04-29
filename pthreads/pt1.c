@@ -120,15 +120,16 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Usage: %s <num_nodes> <num_cores> <memory_per_core>\n", argv[0]);
     exit(1);
   }
-
+  //Stores the test values for later use
   int num_nodes = atoi(argv[1]);
   int num_cores = atoi(argv[2]);
   double memory_per_core = atoi(argv[3]);
 
-
+  //Calculates total memory used and is stored for later use
   double total_memory = num_nodes * num_cores * memory_per_core;
-
+  //Timer used for calculating runtime
   struct timespec start, end;
+  //store inital time
   clock_gettime(CLOCK_MONOTONIC, &start);
 
  
@@ -244,12 +245,14 @@ int main(int argc, char *argv[]) {
 
   close(fd);
 
-
+  // Store end time
   clock_gettime(CLOCK_MONOTONIC, &end);
+  //Calculate the time difference for later analysis
   double elapsed = (end.tv_sec - start.tv_sec) +
                    (end.tv_nsec - start.tv_nsec) / 1e9;
 
-
+  //Print analysis results for program in a single line
+  // The actual limiting should take place in the scheduler (SLURM)
    printf("ptread %d %d %.2f %.2f %.4f\n", num_nodes, num_cores, memory_per_core, total_memory, elapsed);
 
   
