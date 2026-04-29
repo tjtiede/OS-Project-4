@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h> //Added this to analyize runtime
+#include <linux/time.h>
+
 
 #ifndef NUM_THREADS
 #define NUM_THREADS 4
@@ -111,6 +114,26 @@ static void *thread_routine(void *thread_args) {
 }
 
 int main(int argc, char *argv[]) {
+  //Added this to accept args when program is ran to show how many Nodes, cores, Memory-per-core, Total memory used, and runtime 
+  //of the pthreads section.
+  if(argc != 4){
+    fprintf(stderr, "Usage: %s <num_nodes> <num_cores> <memory_per_core>\n", argv[0]);
+    exit(1);
+  }
+
+  int num_nodes = atoi(argv[1]);
+  int num_cores = atoi(argv[2]);
+  double memory_per_core = atoi(argv[3]);
+
+
+  double total_memory = num_nodes * num_cores * memory_per_core;
+
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+
+ 
+
+
   const char *filepath = "/homes/eyv/cis520/wiki_dump.txt";
   int fd = open(filepath, O_RDONLY);
 
@@ -220,4 +243,15 @@ int main(int argc, char *argv[]) {
   }
 
   close(fd);
+
+
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  double elapsed = (end.tv_sec - start.tv_sec) +
+                   (end.tv_nsec - start.tv_nsec) / 1e9;
+
+
+   printf("ptread %d %d %.2f %.2f %.4f\n", num_nodes, num_cores, memory_per_core, total_memory, elapsed);
+
+  
+
 }
