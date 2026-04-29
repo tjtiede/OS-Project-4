@@ -27,5 +27,6 @@ EXIT_CODE=$?
 ELAPSED=$(grep "Elapsed (wall clock)" "$TIMEFILE" | awk '{print $NF}')
 MAX_RSS=$(grep "Maximum resident set size" "$TIMEFILE" | awk '{print $NF}')
 
-# Single result line: Version, Nodes, Cores/Node, Total Tasks, Mem/Core, Elapsed, Max RSS (KB), Exit Code
-echo "$VERSION,$NODES,$CORES,$TOTAL_TASKS,$MEM,$ELAPSED,$MAX_RSS,$EXIT_CODE"
+# Append result line to shared CSV (flock prevents garbled output from concurrent jobs)
+RESULTS_CSV="$SLURM_SUBMIT_DIR/results/results.csv"
+flock "$RESULTS_CSV" bash -c "echo '$VERSION,$NODES,$CORES,$TOTAL_TASKS,$MEM,$ELAPSED,$MAX_RSS,$EXIT_CODE' >> '$RESULTS_CSV'"
