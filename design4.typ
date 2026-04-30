@@ -32,7 +32,7 @@ The main thread is only responsible for:
 
 We partition the batch into sections of size
 $
-  #`bytes_per_thread` = ceil(#`batch_size` / #`num_workers`) #h(.5cm) "where" #`'num_workers` = #`num_threads` - 1.
+  #`bytes_per_thread` = ceil(#`batch_size` / #`num_workers`) #h(.5cm) "where" #`num_workers` = #`num_threads` - 1.
 $
 Each worker is assigned a `thread_index` and is responsible for finding `max_char` for each of the lines that _begin_ in the section starting at
 $
