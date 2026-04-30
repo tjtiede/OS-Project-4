@@ -9,8 +9,11 @@
 #define NUM_THREADS 4
 #endif
 
-#define BATCH_SIZE 32768
-#define MAX_LINE 8192
+enum {
+  NUM_WORKERS = NUM_THREADS - 1,
+  MAX_LINE_LENGTH = 1 << 13,
+  BATCH_SIZE = MAX_LINE_LENGTH * NUM_WORKERS
+};
 
 // We ever need one copy of this data, so in main we have an instance of batch
 // wihch we pass every thread a pointer to
@@ -21,17 +24,17 @@ typedef struct {
 } Batch;
 
 typedef struct {
-  int thread_index;
+  int worker_index;
   Batch *batch;
   int *max_chars; // Write results here
   int max_chars_capacity;
   int max_chars_len;
-} ThreadArg;
+} WorkerArg;
 
-const int bytes_per_thread = (BATCH_SIZE + NUM_THREADS - 1) / NUM_THREADS;
+const int bytes_per_worker = (BATCH_SIZE + NUM_WORKERS - 1) / NUM_WORKERS;
 
 // Appends max_char to arg->max_chars; reallocating max_chars as needed
-static void append_max_char(int max_char, ThreadArg *arg) {
+static void append_max_char(int max_char, WorkerArg *arg) {
   if (arg->max_chars_len >= arg->max_chars_capacity) {
     // If max_chars is at capacity
     // then realloc(max_chars, ...) to double its capacity
@@ -48,19 +51,19 @@ static void append_max_char(int max_char, ThreadArg *arg) {
 }
 
 // Each thread begins execution here and is assigned a specific region of the
-// batch for which it is responsible. Each thread's responsibility begins just
+// batch for which it is responsible. Each workers's responsibility begins just
 // after the first newline in their partition, and extends to the first newline
-// in next thread's partition (besides the 0'th thread, see below).
-static void *thread_routine(void *thread_args) {
-  ThreadArg *arg = (ThreadArg *)thread_args;
+// in next workers's partition (besides the 0'th worker, see below).
+static void *worker_routine(void *worker_args) {
+  WorkerArg *arg = (WorkerArg *)worker_args;
   Batch *batch = arg->batch;
 
-  int char_index = bytes_per_thread * arg->thread_index;
-  const int begining_of_next_threads_partition = char_index + bytes_per_thread;
+  int char_index = bytes_per_worker * arg->worker_index;
+  const int begining_of_next_workers_partition = char_index + bytes_per_worker;
   // The 0'th thread is responsible for the line starting at index 0.
   // All other threads need to advance to the next newline; they're lines start
   // there
-  if (0 != arg->thread_index) {
+  if (0 != arg->worker_index) {
     for (; char_index < batch->len && batch->buf[char_index] != '\n';
          char_index += 1)
       ;
@@ -71,7 +74,7 @@ static void *thread_routine(void *thread_args) {
   unsigned char max_char = 0;
   // Foreach character up to the end of batch->buf
   while (char_index < batch->len) {
-    // Note that any threads given partitions beyond the end of batch->buf
+    // Note that any workers given partitions beyond the end of batch->buf
     // will not have entered into this loop
     if (batch->buf[char_index] == '\n') {
       // Upon newline, we have to append max_char to max_chars
@@ -80,11 +83,11 @@ static void *thread_routine(void *thread_args) {
       // Reset max_char back to zero for the next line
       max_char = 0;
 
-      if (char_index >= begining_of_next_threads_partition) {
-        // If this newline was in the next threads partition,
+      if (char_index >= begining_of_next_workers_partition) {
+        // If this newline was in the next worker's partition,
         // then we're done! (unless we're at EOF, see below).
-        // Note although this line ended in the next threads partition,
-        // it is still this thread's responsibility (see function comment)
+        // Note although this line ended in the next worker's partition,
+        // it is still this worker's responsibility (see function comment)
         break;
       }
     } else if ((unsigned char)batch->buf[char_index] > max_char) {
@@ -98,7 +101,7 @@ static void *thread_routine(void *thread_args) {
   if (0 == batch->bytes_read && char_index == batch->len - 1 &&
       batch->buf[char_index] != '\n') {
     // If we bytes_read is zero, then we are at EOF.
-    // If we are the last thread, then we should be the only thread where
+    // If we are the last worker, then we should be the only worker where
     // char_index points to the very last char.
     // If the last char is not '\n',
     // then the last line is not terminate by a '\n',
@@ -129,22 +132,22 @@ int main(int argc, char *argv[]) {
   batch.len = 0;
   batch.bytes_read = 0;
 
-  // Create threads
-  pthread_t threads[NUM_THREADS];
-  ThreadArg thread_args[NUM_THREADS];
-  const int initial_thread_max_chars_size = 64;
-  for (int thread_index = 0; thread_index < NUM_THREADS; thread_index += 1) {
-    thread_args[thread_index].thread_index = thread_index;
-    thread_args[thread_index].batch = &batch;
-    thread_args[thread_index].max_chars =
-        malloc(initial_thread_max_chars_size * sizeof(int));
-    if (NULL == thread_args[thread_index].max_chars) {
+  // Create worker threads
+  pthread_t workers[NUM_WORKERS];
+  WorkerArg worker_args[NUM_WORKERS];
+  const int initial_worker_max_chars_size = 64;
+  for (int worker_index = 0; worker_index < NUM_WORKERS; worker_index += 1) {
+    worker_args[worker_index].worker_index = worker_index;
+    worker_args[worker_index].batch = &batch;
+    worker_args[worker_index].max_chars =
+        malloc(initial_worker_max_chars_size * sizeof(int));
+    if (NULL == worker_args[worker_index].max_chars) {
       printf("Error: malloc failed\n");
       exit(1);
     }
-    thread_args[thread_index].max_chars_capacity =
-        initial_thread_max_chars_size;
-    thread_args[thread_index].max_chars_len = 0;
+    worker_args[worker_index].max_chars_capacity =
+        initial_worker_max_chars_size;
+    worker_args[worker_index].max_chars_len = 0;
   }
 
   long long lines_processed = 0;
@@ -162,10 +165,10 @@ int main(int argc, char *argv[]) {
     // Add those bytes we just read to track the currently filled bytes
     batch.len += batch.bytes_read;
 
-    for (int thread_index = 0; thread_index < NUM_THREADS; thread_index += 1) {
+    for (int worker_index = 0; worker_index < NUM_WORKERS; worker_index += 1) {
       int pthread_create_error_number =
-          pthread_create(&threads[thread_index], &attr, thread_routine,
-                         (void *)&thread_args[thread_index]);
+          pthread_create(&workers[worker_index], &attr, worker_routine,
+                         (void *)&worker_args[worker_index]);
       if (0 != pthread_create_error_number) {
         printf("ERROR; return code from pthread_create() is %d\n",
                pthread_create_error_number);
@@ -173,10 +176,10 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    for (int thread_index = 0; thread_index < NUM_THREADS; thread_index += 1) {
+    for (int worker_index = 0; worker_index < NUM_WORKERS; worker_index += 1) {
       void *status;
       int pthread_join_error_number =
-          pthread_join(threads[thread_index], &status);
+          pthread_join(workers[worker_index], &status);
       if (pthread_join_error_number) {
         printf("ERROR; error number from pthread_join() is %d\n",
                pthread_join_error_number);
@@ -185,14 +188,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Print results in order
-    for (int thread_index = 0; thread_index < NUM_THREADS; thread_index += 1) {
-      for (int i = 0; i < thread_args[thread_index].max_chars_len; i += 1) {
+    for (int worker_index = 0; worker_index < NUM_WORKERS; worker_index += 1) {
+      for (int i = 0; i < worker_args[worker_index].max_chars_len; i += 1) {
         printf("%lld: %d\n", lines_processed,
-               thread_args[thread_index].max_chars[i]);
+               worker_args[worker_index].max_chars[i]);
         lines_processed += 1;
       }
-      // Reset the len of this thread's max_chars
-      thread_args[thread_index].max_chars_len = 0;
+      // Reset the len of this worker's max_chars
+      worker_args[worker_index].max_chars_len = 0;
     }
 
     // If we've just handled the last batch that was left over from the last

@@ -34,11 +34,11 @@ We partition the batch into sections of size
 $
   #`bytes_per_thread` = ceil(#`batch_size` / #`num_workers`) #h(.5cm) "where" #`num_workers` = #`num_threads` - 1.
 $
-Each worker is assigned a `thread_index` and is responsible for finding `max_char` for each of the lines that _begin_ in the section starting at
+Each worker is assigned a `worker_index` and is responsible for finding `max_char` for each of the lines that _begin_ in the section starting at
 $
-  #`batch`\[(n dot #`bytes_per_thread`)] \
+  #`batch`\[(#`worker_index` dot #`bytes_per_thread`)] \
   "and is up to and including" \
-  #`batch`\[min(#`batch_size`, #h(.5cm) (n + 1) dot #`bytes_per_thread`)] \
+  #`batch`\[min(#`batch_size`, #h(.5cm) (#`worker_index` + 1) dot #`bytes_per_thread`)] \
 $
 Each worker returns an array containing (in order) the value of `max_char` for each of the lines it is responsible for. The main thread can iterate over each thread and each `max_char` to retrieve the values in order.
 
