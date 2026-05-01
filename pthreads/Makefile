@@ -1,15 +1,18 @@
-CC        = gcc
-CFLAGS = -Wall -Wextra -02 -pthread
-TARGET = pthreads/pt1_bin
-
+CC         = gcc
+CFLAGS     = -Wall -Wextra -O2 -pthread
+BINDIR     = bin
 NUM_THREADS ?= 4
+OUT ?= $(BINDIR)/pthread_maxchar_$(NUM_THREADS)
 
-all: $(TARGET)
+.PHONY: all pthread clean
 
-$(TARGET): pthreads/pt1.clean	
-	$(CC) $(CFLAGS) -DNUM_THREADS=$(NUM_THREADS) -o $(TARGET) pthreads/pt1.c
+all: pthread
+
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+pthread: $(BINDIR)
+	$(CC) $(CFLAGS) -DNUM_THREADS=$(NUM_THREADS) -o $(OUT) pt1.c
 
 clean:
-	rm -f $(target)
-
-.PHONY: all clean
+	rm -f $(BINDIR)/pthread_maxchar_*
