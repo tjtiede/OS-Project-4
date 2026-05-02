@@ -24,12 +24,8 @@ if [[ ! -f "$PROJECT_DIR/bin/pt2" ]]; then
   make -C "$PROJECT_DIR" mpi
 fi
 
-# Create results directory and initialize shared CSV with header (if not already present)
+# Create results directory relative to project root
 mkdir -p "$PROJECT_DIR/results"
-RESULTS_CSV="$PROJECT_DIR/results/results.csv"
-if [[ ! -f "$RESULTS_CSV" ]]; then
-  echo "Version,Nodes,Cores/Node,Total Tasks,Mem/Core,Elapsed,Max RSS (KB),Exit Code" > "$RESULTS_CSV"
-fi
 
 # ── Parameter space ──────────────────────────────────────────────────────────
 CORES_LIST=(1 2 4 8 16 32)
