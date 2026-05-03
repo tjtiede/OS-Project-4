@@ -113,7 +113,7 @@ static void *worker_routine(void *worker_args) {
   pthread_exit(NULL);
 }
 
-int main(int argc, char *argv[]) {
+int main() {
   const char *filepath = "/homes/eyv/cis520/wiki_dump.txt";
   int fd = open(filepath, O_RDONLY);
 
