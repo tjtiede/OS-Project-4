@@ -1,5 +1,5 @@
 #!/bin/bash
-# Written by AI for now just to see if I can get the output format somewhat correct
+# Written by Claud Sonnet 4.6 for now so that I didn't have to wait on a teamate before I started testing.
 #SBATCH --job-name=mpi_pt2
 #SBATCH --constraint=moles
 #SBATCH --time=02:00:00

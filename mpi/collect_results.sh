@@ -1,6 +1,6 @@
 #!/bin/bash
 # collect_results.sh
-# Run this after all Slurm jobs have finished to merge per-job result files
+# All this does is combine all of the results files into one results.csv file
 # into a single results.csv.
 #
 # Usage:
@@ -14,12 +14,12 @@ OUTPUT="$RESULTS_DIR/results.csv"
 shopt -s nullglob
 FILES=("$RESULTS_DIR"/result_*.csv)
 
-if [[ ${#FILES[@]} -eq 0 ]]; then
-  echo "No result_*.csv files found in $RESULTS_DIR — have the jobs finished?"
+if [[ ${#FILES[@]} -eq 0 ]]; then #if no result files exist then print an error
+  echo "No result files found."
   exit 1
 fi
 
-# Write header then append all per-job lines
+# Write the header for better readability then append all lines together to avoid a race condition.
 echo "Version,Nodes,Cores/Node,Total Tasks,Mem/Core,Elapsed,Max RSS (KB),Exit Code" > "$OUTPUT"
 cat "${FILES[@]}" >> "$OUTPUT"
 
