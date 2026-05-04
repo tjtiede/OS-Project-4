@@ -1,3 +1,4 @@
 #!/bin/sh
-make -s NUM_THREADS=$1 && mpirun ./3way-mpi-$1
+# run.sh {num_threads}
+mpirun -N $1 ./3way-mpi-$1
 
