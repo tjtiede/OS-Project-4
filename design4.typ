@@ -108,34 +108,66 @@ $
   #`budget` = #`cores` dot #`mem-per-cpu`.
 $
 
-= WARNING: Our previous definition of budget was incorrect and we need to fix our test cases
+#pagebreak()
 
-We tested the performance of each version under 3 different memory budgets where under each budget we tested 3 different cases: \
-#h(.5cm) *Maximum Nodes* --- Distribute the workload across the most machines possible. This tests the overhead of inter-node communicaiton and benefit of parallelizing acrossed machines. \
-#h(.5cm) *Maximum Cores Per Node* --- Concentrate all cores on as few nodes as possible, maximizing intra-node parallelism and shared memory bandwidth. \
-#h(.5cm) *Maximum Memory per Core* --- Allocate the largest possible memory per core, using fewer total ranks. This tests whether memory-bound workloads benefit from reduced core density.
+We tested each paradigm with test cases tailored to their execution model.
+
+#align(center, [== pthreads and OpenMP])
+These pthreads and OpenMP are limited to a single-machine execution with shared memory. We test scaling on a single node with varying thread counts and memory allocations:
+
 
 #table(
   columns: (auto, auto, auto, auto),
-  table.cell(stroke: (left: none, top: none))[],
-  [*Budget A: \~4096 MB*],
-  [*Budget B: \~8192 MB*],
-  [*Budget C: \~16384 MB*],
-  [*Max. Nodes*],
-  [4 nodes, 4 cores, 512 MB],
-  [8 nodes, 2 cores, 512 MB],
-  [8 nodes, 4 cores, 512 MB],
-
-  [*Max. Cores*],
-  [1 nodes, 16 cores, 256 MB],
-  [1 nodes, 16 cores, 512 MB],
-  [1 nodes, 32 cores, 512 MB],
-
-  [*Max. Mem.*],
-  [2 nodes, 4 cores, 512 MB],
-  [2 nodes, 4 cores, 1 GB],
-  [2 nodes, 4 cores, 2 GB],
+  table.cell(stroke: (left: none, top: none))[*Configuration*],
+  [*Budget A: 2 GB*],
+  [*Budget B: 4 GB*],
+  [*Budget C: 8 GB*],
+  [*1 thread*],
+  [1 node, 1 thread, 2 GB],
+  [1 node, 1 thread, 4 GB],
+  [1 node, 1 thread, 8 GB],
+  [*4 threads*],
+  [1 node, 4 threads, 512 MB],
+  [1 node, 4 threads, 1 GB],
+  [1 node, 4 threads, 2 GB],
+  [*8 threads*],
+  [1 node, 8 threads, 256 MB],
+  [1 node, 8 threads, 512 MB],
+  [1 node, 8 threads, 1 GB],
+  [*16 threads*],
+  [1 node, 16 threads, 128 MB],
+  [1 node, 16 threads, 256 MB],
+  [1 node, 16 threads, 512 MB],
 )
+
+#align(center, [== MPI])
+MPI can distribute work across multiple processes and nodes. We test both single-node and multi-node scenarios to isolate communication overhead:
+
+#table(
+  columns: (auto, auto, auto, auto),
+  table.cell(stroke: (left: none, top: none))[*Configuration*],
+  [*Budget A: 2 GB*],
+  [*Budget B: 4 GB*],
+  [*Budget C: 8 GB*],
+  [*1 node, 4 ranks*],
+  [1 node, 4 ranks, 512 MB/rank],
+  [1 node, 4 ranks, 1 GB/rank],
+  [1 node, 4 ranks, 2 GB/rank],
+  [*2 nodes, 2 ranks each*],
+  [2 nodes, 2 ranks each, 512 MB/rank],
+  [2 nodes, 2 ranks each, 1 GB/rank],
+  [2 nodes, 2 ranks each, 2 GB/rank],
+  [*4 nodes, 1 rank each*],
+  [4 nodes, 1 rank each, 512 MB/rank],
+  [4 nodes, 1 rank each, 1 GB/rank],
+  [4 nodes, 1 rank each, 2 GB/rank],
+  [*8 nodes, 1 rank each*],
+  [8 nodes, 1 rank each, 256 MB/rank],
+  [8 nodes, 1 rank each, 512 MB/rank],
+  [8 nodes, 1 rank each, 1 GB/rank],
+)
+
+Where *Budget* represents the total memory available: $#`budget` = #`num_processes` dot #`mem-per-process`$. This allows us to observe how each paradigm scales with increasing memory resources while controlling for communication overhead (MPI single-node baseline vs. multi-node scenarios) and thread scaling efficiency (pthreads/OpenMP).
 
 #pagebreak()
 
@@ -149,6 +181,8 @@ TODO
 #pagebreak()
 
 #align(center, [= Appendix - Controlling Scripts]) \
+
+// In how to use these scripts note that you have to load MPI module
 
 TODO
 - Include Files (Typst has a macro for this, we just need a file path)
