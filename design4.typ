@@ -179,14 +179,23 @@ TODO
 - Make Graphs With Error Bars
 
 #image("images/Screenshot 2026-05-03 231309.png")
+Raw data used to compare paradigms
 #image("images/Screenshot 2026-05-03 231253.png")
+Calculated average times and used memory of each test case
 #image("images/Screenshot 2026-05-03 231237.png")
+Calculated standard deviation for time and used memory
 #image("images/Average Execution Time by Config & Program.png")
+Average Execution time of each paradigm
 #image("images/Average Memory Usage by Config & Program.png")
+Average Memory Usage of each paradigm
 #image("images/Avg Execution Time per Program (± StdDev).png")
+Standard deviation of execution time
 #image("images/Avg Memory Usage per Program (± StdDev).png")
+Standard deviaton of memory usage
 #image("images/Execution Time Scaling (Line).png")
+Execution time scaling
 #image("images/Memory Usage Scaling (Line).png")
+Memory usage scaling
 
 #pagebreak()
 
