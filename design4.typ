@@ -178,9 +178,30 @@ TODO
 - Perform Significance Test
 - Make Graphs With Error Bars
 
+#image("images/Screenshot 2026-05-03 231309.png")
+#image("images/Screenshot 2026-05-03 231253.png")
+#image("images/Screenshot 2026-05-03 231237.png")
+#image("images/Average Execution Time by Config & Program.png")
+#image("images/Average Memory Usage by Config & Program.png")
+#image("images/Avg Execution Time per Program (± StdDev).png")
+#image("images/Avg Memory Usage per Program (± StdDev).png")
+#image("images/Execution Time Scaling (Line).png")
+#image("images/Memory Usage Scaling (Line).png")
+
 #pagebreak()
 
 #align(center, [= Appendix - Controlling Scripts]) \
+
+Steps to do MPI testing: \
+Enter the following: \
+#h(.5cm) `module load CMake/3.23.1-GCCcore-11.3.0 foss/2022a OpenMPI/4.1.4-GCC-11.3.0 CUDA/11.7.0` \
+Then: \
+#h(.5cm) `bash mpi/submit_tests.sh` \
+After the tests have all run, combine the results to a results.csv file: \
+#h(.5cm) `bash mpi/collect_results.sh`
+
+#align(center, [== `submit_test.sh`])
+#raw(read("3way-mpi/submit_tests.sh"), lang: "sh")
 
 // In how to use these scripts note that you have to load MPI module
 
