@@ -66,7 +66,7 @@ Under the pthreads paradigm the main() thread spawns each of worker threads whic
 Under the MPI paradigm we can not pass message by sharing memory so we must share memory by passing messages. Which is a fancy way to say that we have to copy all of the data between threads. In this way, the biggest difference in performance should be that the MPI code has to copy the batch buffer to each thread and the array of `max_char`'s from each thread.
 
 == OpenMP
-`TODO`
+OpenMP is nearly identical to pthreads except with a different a syntax that is generally less explicit.
 
 #pagebreak()
 
@@ -109,6 +109,8 @@ $
 $
 
 #pagebreak()
+
+#align(center, [= Testing Methodology Cont.]) \
 
 We tested each paradigm with test cases tailored to their execution model.
 
@@ -173,33 +175,62 @@ Where *Budget* represents the total memory available: $#`budget` = #`num_process
 
 #align(center, [= Performance Analysis]) \
 
-TODO
-- Compute Standard Deviations
-- Perform Significance Test
-- Make Graphs With Error Bars
-
 #image("images/Screenshot 2026-05-03 231309.png")
 Raw data used to compare paradigms
+
+#align(center, [= Performance Analysis Cont.]) \
 #image("images/Screenshot 2026-05-03 231253.png")
 Calculated average times and used memory of each test case
 #image("images/Screenshot 2026-05-03 231237.png")
 Calculated standard deviation for time and used memory
+
+#align(center, [= Performance Analysis Cont.]) \
 #image("images/Average Execution Time by Config & Program.png")
 Average Execution time of each paradigm
+
+#align(center, [= Performance Analysis Cont.]) \
 #image("images/Average Memory Usage by Config & Program.png")
 Average Memory Usage of each paradigm
+
+#align(center, [= Performance Analysis Cont.]) \
 #image("images/Avg Execution Time per Program (± StdDev).png")
 Standard deviation of execution time
+
+#align(center, [= Performance Analysis Cont.]) \
 #image("images/Avg Memory Usage per Program (± StdDev).png")
 Standard deviaton of memory usage
+
+#align(center, [= Performance Analysis Cont.]) \
 #image("images/Execution Time Scaling (Line).png")
 Execution time scaling
+
+#align(center, [= Performance Analysis Cont.]) \
 #image("images/Memory Usage Scaling (Line).png")
 Memory usage scaling
 
 #pagebreak()
 
-#align(center, [= Appendix - Controlling Scripts]) \
+#align(center, [= Appendix - pthreads Controlling Scripts]) \
+
+#align(center, [== `3way-pthread/run.sh`])
+#raw(read("3way-pthread/run.sh"), lang: "sh")
+
+#align(center, [== `3way-pthread/schedule.sh`])
+#raw(read("3way-pthread/schedule.sh"), lang: "sh")
+
+#pagebreak()
+
+#align(center, [= Appendix - OpenMP Controlling Scripts]) \
+
+#align(center, [== `3way-openmp/run.sh`])
+#raw(read("3way-openmp/run.sh"), lang: "sh")
+
+#align(center, [== `3way-openmp/schedule.sh`])
+#raw(read("3way-openmp/schedule.sh"), lang: "sh")
+
+#pagebreak()
+
+#align(center, [= Appendix - MPI Controlling Scripts]) \
 
 Steps to do MPI testing: \
 Enter the following: \
@@ -209,14 +240,13 @@ Then: \
 After the tests have all run, combine the results to a results.csv file: \
 #h(.5cm) `bash mpi/collect_results.sh`
 
-#align(center, [== `submit_test.sh`])
+#align(center, [== `3way-mpi/submit_test.sh`])
 #raw(read("3way-mpi/submit_tests.sh"), lang: "sh")
 
-// In how to use these scripts note that you have to load MPI module
+#pagebreak()
 
-TODO
-- Include Files (Typst has a macro for this, we just need a file path)
-- Probably want to include description of how to use the files, but perhaps that would better be a part of the script itself
+#align(center, [== `3way-mpi/slurm_job.sh`])
+#raw(read("3way-mpi/slurm_job.sh"), lang: "sh")
 
 #pagebreak()
 
