@@ -76,10 +76,39 @@ We want to test the performance and resource usage of our code on the "mole" cla
 #h(.5cm) Nodes: 1, 2, 4, 8 \
 #h(.5cm) Cores: 1, 2, 4, 8, 16, 32 \
 #h(.5cm) Memory per core: 64MB, 128MB, 512MB, 1GB, 1.5GB, 3GB \
-We want to show how performance differs across multiple machines vs a single machine and using different memory "budgets" where
+
+When using `sbatch` to schedule jobs, we control the parameters \
+#h(.5cm) `time: uint`, \
+#h(.5cm) `mem-per-cpu: uint` $times {"MB", "GB"}$, \
+#h(.5cm) `cpus-per-task: uint`, \
+#h(.5cm) `ntasks: uint`, \
+#h(.5cm) `nodes: uint`, \
+where the total number of cores is equal to
 $
-  #`budget` = #`nodes` dot #`ntask-per-node` dot #`mem-per-cpu`.
+  #`cores` = #`cpus-per-task` dot #`ntasks`.
 $
+Therefore for a given number of `cores` we can determine the appropriate `cpus-per-task` we can divide both sides by `ntasks` yeilding
+$
+  #`cpus-per-task` = #`cores` / #`ntasks`
+$
+where (since `cpus-per-task` is an integer) we must have that `cores` is a multiple of `ntasks`. Also consider that each node only has so many cores.
+
+*pthreads and OpenMP* are single machine only. Under these paradigms we always have that
+$
+  #`ntasks` = 1 #h(.5cm) "and" #h(.5cm) #`cpus-per-task` = #`num_threads`.
+$
+
+Reciprocally, under *MPI* we always have that
+$
+  #`ntasks` = #`num_threads` = N #h(.5cm) "and" #h(.5cm) #`cpus-per-task` = 1.
+$
+
+We want to show how performance differs across multiple machines vs a single machine and using different memory "*budgets*" where
+$
+  #`budget` = #`cores` dot #`mem-per-cpu`.
+$
+
+= WARNING: Our previous definition of budget was incorrect and we need to fix our test cases
 
 We tested the performance of each version under 3 different memory budgets where under each budget we tested 3 different cases: \
 #h(.5cm) *Maximum Nodes* --- Distribute the workload across the most machines possible. This tests the overhead of inter-node communicaiton and benefit of parallelizing acrossed machines. \
